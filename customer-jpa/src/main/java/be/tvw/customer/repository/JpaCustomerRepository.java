@@ -31,18 +31,21 @@ public class JpaCustomerRepository implements CustomerRepository {
     }
 
     public CustomerData save(CreateCustomerRequest createCustomerRequest) {
-        return springCustomerJpaRepository.save(new CustomerEntity(createCustomerRequest));
+        return springCustomerJpaRepository.saveAndFlush(new CustomerEntity(createCustomerRequest));
     }
 
     @Override
     public CustomerData update(Long customerId, UpdateCustomerRequest updateCustomerRequest) {
+        if (springCustomerJpaRepository.existsByEmailAndIdNot(updateCustomerRequest.email(), customerId)) {
+            throw new IllegalArgumentException("Customer with email " + updateCustomerRequest.email() + " already exists");
+        }
         return springCustomerJpaRepository.findById(customerId)
                 .map(foundEntity -> foundEntity.update(updateCustomerRequest))
-                .map(springCustomerJpaRepository::save)
+                .map(springCustomerJpaRepository::saveAndFlush)
                 .orElseThrow();
     }
 
     public interface SpringCustomerJpaRepository extends JpaRepository<CustomerEntity, Long> {
-
+        boolean existsByEmailAndIdNot(String email, Long id);
     }
 }

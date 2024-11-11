@@ -37,6 +37,9 @@ public class FakeCustomerRepository extends FakeRepository<FakeCustomerRepositor
 
     @Override
     public CustomerData update(Long customerId, UpdateCustomerRequest updateCustomerRequest) {
+        if (repository.findByEmail(updateCustomerRequest.email()).filter(found -> found.id() != customerId).isPresent()) {
+            throw new IllegalArgumentException("Email %s already exists".formatted(updateCustomerRequest.email()));
+        }
         return repository.findById(customerId)
                 .map(foundEntity -> foundEntity.update(updateCustomerRequest))
                 .map(repository::save)
@@ -44,8 +47,8 @@ public class FakeCustomerRepository extends FakeRepository<FakeCustomerRepositor
     }
 
     public interface SpringKeyValueCustomerRepository extends KeyValueRepository<FakeCustomer, Long> {
-
         boolean existsByEmail(String email);
-        boolean existsByEmailAndIdNot(String email, Long id);
+
+        Optional<FakeCustomer> findByEmail(String email);
     }
 }

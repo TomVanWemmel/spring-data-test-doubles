@@ -9,11 +9,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.io.Serializable;
 
 @Entity
-@Table(name = "customer_entity")
+@Table(name = "customer_entity",
+        uniqueConstraints = @UniqueConstraint(name = "unique_user_email", columnNames = {"email"}))
 public class CustomerEntity implements CustomerData, Serializable {
 
     @Id

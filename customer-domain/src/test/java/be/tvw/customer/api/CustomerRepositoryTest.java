@@ -25,6 +25,7 @@ public interface CustomerRepositoryTest {
     }
 
     @Test
+    @Order(1)
     @DisplayName("When saving customer data an ID should be provided, when searching that ID that customers data should be returned")
     default void saveAndFindById() {
         CreateCustomerRequest createCustomerRequest = new CreateCustomerRequest("customer name", "customer@company.it", 21);
@@ -40,16 +41,6 @@ public interface CustomerRepositoryTest {
                     assertThat(customer.email()).isNotNull().isEqualTo(createCustomerRequest.email());
                     assertThat(customer.age()).isNotNull().isEqualTo(createCustomerRequest.age());
                 });
-    }
-
-    @Test
-    @DisplayName("Searching by unknown ID should not be possible")
-    default void findByUnknownId() {
-
-        Optional<? extends CustomerData> foundCustomer = getCustomerRepository().customerById(123L);
-
-        assertThat(foundCustomer)
-                .isEmpty();
     }
 
     @Test
@@ -69,6 +60,15 @@ public interface CustomerRepositoryTest {
     }
 
     @Test
+    @DisplayName("Searching by unknown ID should not be possible")
+    default void findByUnknownId() {
+        Optional<? extends CustomerData> foundCustomer = getCustomerRepository().customerById(123L);
+
+        assertThat(foundCustomer)
+                .isEmpty();
+    }
+
+    @Test
     @DisplayName("Saving a customer with an existing email should not be possible")
     default void savingCustomerWithDuplicateEmail() {
         CustomerData _existingCustomer = getCustomerRepository().save(new CreateCustomerRequest("customer name", "customer@company.it", 21));
@@ -79,9 +79,9 @@ public interface CustomerRepositoryTest {
 
     @Test
     @DisplayName("An existing customer can be updated")
-    default void updateCustomerName() {
+    default void updateCustomer() {
         DefaultCustomer existingCustomer = new DefaultCustomer(getCustomerRepository().save(new CreateCustomerRequest("customer name", "customer@company.it", null)));
-        UpdateCustomerRequest updateCustomerRequest = new UpdateCustomerRequest(36);
+        UpdateCustomerRequest updateCustomerRequest = new UpdateCustomerRequest("be.customer@company.be", 36);
         DefaultCustomer updatedCustomer = new DefaultCustomer(getCustomerRepository().update(existingCustomer.id(), updateCustomerRequest));
 
         assertThat(updatedCustomer.id()).isNotNull().isEqualTo(existingCustomer.id());
@@ -89,9 +89,7 @@ public interface CustomerRepositoryTest {
         assertThat(updatedCustomer.email()).isNotNull().isEqualTo(existingCustomer.email());
         assertThat(updatedCustomer.age()).isNotNull().isEqualTo(updateCustomerRequest.age());
 
-        Optional<? extends CustomerData> foundCustomer = getCustomerRepository().customerById(updatedCustomer.id());
-
-        assertThat(foundCustomer)
+        assertThat(getCustomerRepository().customerById(updatedCustomer.id()))
                 .isPresent()
                 .hasValueSatisfying(customer -> {
                     assertThat(customer.id()).isNotNull().isEqualTo(updatedCustomer.id());
@@ -99,6 +97,26 @@ public interface CustomerRepositoryTest {
                     assertThat(customer.email()).isNotNull().isEqualTo(updatedCustomer.email());
                     assertThat(customer.age()).isNotNull().isEqualTo(updatedCustomer.age());
                 });
+    }
+
+    @Test
+    @DisplayName("An email update has to be unique")
+    default void canNotUpdateToEmailInUse() {
+        DefaultCustomer customerA = new DefaultCustomer(getCustomerRepository().save(new CreateCustomerRequest("a customer", "a@company.it", null)));
+        DefaultCustomer customerB = new DefaultCustomer(getCustomerRepository().save(new CreateCustomerRequest("customer be", "b@company.it", null)));
+        UpdateCustomerRequest updateCustomerRequest = new UpdateCustomerRequest("a@company.it", null);
+
+        assertThatThrownBy(() -> getCustomerRepository().update(customerB.id(), updateCustomerRequest))
+                .isInstanceOf(Exception.class);
+    }
+
+    @Test
+    @DisplayName("Can not update unidentified customer")
+    default void updateCustomerName() {
+        UpdateCustomerRequest updateCustomerRequest = new UpdateCustomerRequest("be.customer@company.be", 36);
+
+        assertThatThrownBy(() -> getCustomerRepository().update(123L, updateCustomerRequest))
+                .isInstanceOf(Exception.class);
     }
 
     record DefaultCustomer(Long id, String name, String email, Integer age) implements CustomerData {

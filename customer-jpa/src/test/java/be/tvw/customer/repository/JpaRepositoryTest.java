@@ -5,6 +5,10 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import liquibase.Liquibase;
+import liquibase.command.CommandScope;
+import liquibase.command.core.UpdateCommandStep;
+import liquibase.command.core.helpers.DatabaseChangelogCommandStep;
+import liquibase.command.core.helpers.DbUrlConnectionArgumentsCommandStep;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
@@ -41,7 +45,7 @@ public abstract class JpaRepositoryTest<T> {
     }
 
     private EntityTransaction getTransaction() {
-        return this.entityManager.getTransaction();
+        return entityManager.getTransaction();
     }
 
     private void beginTransaction() {
@@ -52,14 +56,18 @@ public abstract class JpaRepositoryTest<T> {
 
     @BeforeEach
     void setUp() {
-        Session session = (Session) this.entityManager.unwrap(Session.class);
+        Session session = entityManager.unwrap(Session.class);
         session.doWork((connection) -> {
             try {
                 Liquibase liquibase = new Liquibase("liquibase/master.xml", new ClassLoaderResourceAccessor(), new JdbcConnection(connection));
-                liquibase.update("");
-            } catch (LiquibaseException var3) {
-                LiquibaseException e = var3;
-                throw new RuntimeException(e);
+                CommandScope updateCommand = new CommandScope(UpdateCommandStep.COMMAND_NAME);
+                updateCommand.addArgumentValue(DbUrlConnectionArgumentsCommandStep.DATABASE_ARG, liquibase.getDatabase());
+                updateCommand.addArgumentValue(UpdateCommandStep.CHANGELOG_ARG, liquibase.getDatabaseChangeLog());
+                updateCommand.addArgumentValue(UpdateCommandStep.CHANGELOG_FILE_ARG, liquibase.getChangeLogFile());
+                updateCommand.addArgumentValue(DatabaseChangelogCommandStep.CHANGELOG_PARAMETERS, liquibase.getChangeLogParameters());
+                updateCommand.execute();
+            } catch (LiquibaseException ex) {
+                throw new RuntimeException(ex);
             }
         });
         getTransaction().setRollbackOnly();

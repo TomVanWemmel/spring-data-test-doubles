@@ -45,7 +45,11 @@
                         <configuration>
                             <includes>
                                 <include>be/tvw/customer/api/**/*</include>
+                                <include>be/tvw/customer/fakes/**/*</include>
                             </includes>
+                            <excludes>
+                                <exclude>be/tvw/customer/fakes/**/*Test.class</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>

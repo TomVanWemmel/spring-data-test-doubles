@@ -1,4 +1,4 @@
 package be.tvw.customer.api;
 
-public record UpdateCustomerRequest(Integer age) {
+public record UpdateCustomerRequest(String email, Integer age) {
 }
