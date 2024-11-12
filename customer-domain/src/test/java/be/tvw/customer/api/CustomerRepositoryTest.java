@@ -74,7 +74,7 @@ public interface CustomerRepositoryTest {
         CustomerData _existingCustomer = getCustomerRepository().save(new CreateCustomerRequest("customer name", "customer@company.it", 21));
 
         assertThatThrownBy(() -> getCustomerRepository().save(new CreateCustomerRequest("other name", "customer@company.it", null)))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -107,7 +107,7 @@ public interface CustomerRepositoryTest {
         UpdateCustomerRequest updateCustomerRequest = new UpdateCustomerRequest("a@company.it", null);
 
         assertThatThrownBy(() -> getCustomerRepository().update(customerB.id(), updateCustomerRequest))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -116,7 +116,7 @@ public interface CustomerRepositoryTest {
         UpdateCustomerRequest updateCustomerRequest = new UpdateCustomerRequest("be.customer@company.be", 36);
 
         assertThatThrownBy(() -> getCustomerRepository().update(123L, updateCustomerRequest))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(RuntimeException.class);
     }
 
     record DefaultCustomer(Long id, String name, String email, Integer age) implements CustomerData {

@@ -19,9 +19,17 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.testcontainers.containers.PostgreSQLContainer;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class JpaRepositoryTest<T> {
 
+    private static final PostgreSQLContainer DATABASE = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("myDatabase")
+            .withUsername("myUsername")
+            .withPassword("myPassword");
     private static EntityManager entityManager;
     private static EntityManagerFactory entityManagerFactory;
     protected T repository;
@@ -29,7 +37,14 @@ public abstract class JpaRepositoryTest<T> {
 
     @BeforeAll
     static void startDatabase() {
-        entityManagerFactory = Persistence.createEntityManagerFactory("customer-test-unit");
+        DATABASE.start();
+        Map<String,String> properties = new HashMap<>();
+        properties.put("javax.persistence.jdbc.url", DATABASE.getJdbcUrl());
+        properties.put("javax.persistence.jdbc.user", DATABASE.getUsername());
+        properties.put("javax.persistence.jdbc.password", DATABASE.getPassword());
+        properties.put("javax.persistence.jdbc.driver", DATABASE.getDriverClassName());
+
+        entityManagerFactory = Persistence.createEntityManagerFactory("customer-test-unit",properties);
         entityManager = entityManagerFactory.createEntityManager();
     }
 
@@ -37,6 +52,7 @@ public abstract class JpaRepositoryTest<T> {
     static void stopDatabase() {
         entityManager.close();
         entityManagerFactory.close();
+        DATABASE.stop();
     }
 
     public JpaRepositoryTest() {
