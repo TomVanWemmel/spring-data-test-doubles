@@ -43,7 +43,7 @@ public class FakeCustomerRepository extends FakeRepository<FakeCustomerRepositor
         return repository.findById(customerId)
                 .map(foundEntity -> foundEntity.update(updateCustomerRequest))
                 .map(repository::save)
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException("Could not find customer with id %d".formatted(customerId)));
     }
 
     public interface SpringKeyValueCustomerRepository extends KeyValueRepository<FakeCustomer, Long> {
